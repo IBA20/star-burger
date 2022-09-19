@@ -1,12 +1,17 @@
+from django import forms
 from django.contrib import admin
+from django.db.models import Count
+from django.http import HttpResponseRedirect
 from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.utils.http import url_has_allowed_host_and_scheme
 
-from .models import Product
-from .models import ProductCategory
-from .models import Restaurant
-from .models import RestaurantMenuItem
+from django.conf import settings
+from .models import (
+    Product, ProductCategory, Restaurant, RestaurantMenuItem,
+    Order, OrderPosition
+)
 
 
 class RestaurantMenuItemInline(admin.TabularInline):
@@ -90,17 +95,77 @@ class ProductAdmin(admin.ModelAdmin):
     def get_image_preview(self, obj):
         if not obj.image:
             return 'выберите картинку'
-        return format_html('<img src="{url}" style="max-height: 200px;"/>', url=obj.image.url)
+        return format_html(
+            '<img src="{url}" style="max-height: 200px;"/>', url=obj.image.url
+            )
+
     get_image_preview.short_description = 'превью'
 
     def get_image_list_preview(self, obj):
         if not obj.image or not obj.id:
             return 'нет картинки'
         edit_url = reverse('admin:foodcartapp_product_change', args=(obj.id,))
-        return format_html('<a href="{edit_url}"><img src="{src}" style="max-height: 50px;"/></a>', edit_url=edit_url, src=obj.image.url)
+        return format_html(
+            '<a href="{edit_url}"><img src="{src}" style="max-height: 50px;"/></a>',
+            edit_url=edit_url, src=obj.image.url
+            )
+
     get_image_list_preview.short_description = 'превью'
 
 
 @admin.register(ProductCategory)
 class ProductAdmin(admin.ModelAdmin):
     pass
+
+
+class OrderPositionInline(admin.TabularInline):
+    model = OrderPosition
+    extra = 0
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    inlines = [OrderPositionInline]
+    list_display = ('firstname', 'lastname', 'phonenumber', 'address')
+    # my_id_for_formfield = None
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj:
+            self.my_id_for_formfield = obj.id
+        return super(OrderAdmin, self).get_form(request, obj, **kwargs)
+
+
+    def save_model(self, request, obj, form, change):
+        """If restaurant selected - change status to APPOINTED"""
+        if obj.restaurant and obj.status == 'NW':
+            obj.status = 'AP'
+        obj.save()
+
+    def save_formset(self, request, form, formset, change):
+        """Saves product prices as of the order creation moment"""
+        instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for instance in instances:
+            instance.price = instance.product.price
+            instance.save()
+
+    def response_post_save_change(self, request, obj):
+        default_response = super().response_post_save_change(request, obj)
+        if "next" in request.GET:
+            next_url = request.GET['next']
+            if url_has_allowed_host_and_scheme(
+                next_url, settings.ALLOWED_HOSTS
+            ):
+                return HttpResponseRedirect(next_url)
+        return default_response
+
+    # def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #     print(request)
+    #     if db_field.name == "restaurant":
+    #         kwargs["queryset"] = Restaurant.objects.prefetch_related('menu_items').filter(menu_items__product__product_positions__order=self.my_id_for_formfield).aggregate(fls=Count('menu_items__availability', menu_items__availability=False)).filter(fls=0)
+    #     return super(OrderAdmin, self).formfield_for_foreignkey(
+    #         db_field, request, **kwargs
+    #         )
+
+

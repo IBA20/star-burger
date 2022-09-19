@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Sum, F
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
@@ -7,8 +8,11 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
-
-from foodcartapp.models import Product, Restaurant
+from foodcartapp.models import (
+    Product, Restaurant, Order, RestaurantMenuItem,
+    OrderPosition,
+)
+from .geofunctions import fetch_coordinates
 
 
 class Login(forms.Form):
@@ -92,6 +96,35 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
+    rest_by_product = {}
+    all_restaurants_names = set()
+    for record in RestaurantMenuItem.objects.select_related().all():
+        if record.availability:
+            rest_by_product.setdefault(record.product.id, set()).add(
+                record.restaurant.name
+            )
+        all_restaurants_names.add(
+            (record.restaurant.name, record.restaurant.address)
+        )
+
+    order_items = Order.orders.filter(
+        status__in=['NW', 'AP', 'PR', 'DL']
+    ).orders_with_total()
+
+    order_positions = OrderPosition.objects.select_related('order').filter(
+        order__status__in=['NW', 'AP', 'PR', 'DL']
+    )
+
+    possible_restaurants = {
+        order.pk: all_restaurants_names for order in order_items
+    }
+    for order_position in order_positions:
+        possible_restaurants[order_position.order.id] = \
+            possible_restaurants[order_position.order.id] & \
+            rest_by_product[order_position.product_id]
+
     return render(request, template_name='order_items.html', context={
-        # TODO заглушка для нереализованного функционала
+        'order_items': order_items,
+        'opts': Order._meta,
+        'availability': possible_restaurants
     })

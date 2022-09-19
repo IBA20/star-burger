@@ -1,8 +1,14 @@
+import json
+
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.templatetags.static import static
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.db import transaction
 
-
-from .models import Product
+from .models import Product, Order, OrderPosition
+from .serializers import OrderSerializer
 
 
 def banners_list_api(request):
@@ -57,6 +63,26 @@ def product_list_api(request):
     })
 
 
+@api_view(['POST'])
 def register_order(request):
-    # TODO это лишь заглушка
-    return JsonResponse({})
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    with transaction.atomic():
+        order = Order.orders.create(
+            firstname=serializer.validated_data['firstname'],
+            lastname=serializer.validated_data['lastname'],
+            phonenumber=serializer.validated_data['phonenumber'],
+            address=serializer.validated_data['address'],
+        )
+        order_position_fields = serializer.validated_data['products']
+        order_positions = [
+            OrderPosition(
+                order=order,
+                product=fields['product'],
+                quantity=fields['quantity'],
+                price=fields['product'].price
+            ) for fields in order_position_fields
+        ]
+        OrderPosition.objects.bulk_create(order_positions)
+
+    return Response(OrderSerializer(order).data)
