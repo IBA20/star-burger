@@ -1,5 +1,4 @@
 from django import forms
-from django.db.models import Sum, F
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
@@ -8,36 +7,39 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
-from foodcartapp.models import (
-    Product, Restaurant, Order, RestaurantMenuItem,
-    OrderPosition,
-)
+from foodcartapp.models import (Product, Restaurant, Order, RestaurantMenuItem)
 from .geofunctions import fetch_coordinates
 
 
 class Login(forms.Form):
     username = forms.CharField(
         label='Логин', max_length=75, required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Укажите имя пользователя'
-        })
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Укажите имя пользователя'
+            }
+        )
     )
     password = forms.CharField(
         label='Пароль', max_length=75, required=True,
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Введите пароль'
-        })
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Введите пароль'
+            }
+        )
     )
 
 
 class LoginView(View):
     def get(self, request, *args, **kwargs):
         form = Login()
-        return render(request, "login.html", context={
-            'form': form
-        })
+        return render(
+            request, "login.html", context={
+                'form': form
+            }
+            )
 
     def post(self, request):
         form = Login(request.POST)
@@ -53,10 +55,12 @@ class LoginView(View):
                     return redirect("restaurateur:RestaurantView")
                 return redirect("start_page")
 
-        return render(request, "login.html", context={
-            'form': form,
-            'ivalid': True,
-        })
+        return render(
+            request, "login.html", context={
+                'form': form,
+                'ivalid': True,
+            }
+            )
 
 
 class LogoutView(auth_views.LogoutView):
@@ -74,57 +78,62 @@ def view_products(request):
 
     products_with_restaurant_availability = []
     for product in products:
-        availability = {item.restaurant_id: item.availability for item in product.menu_items.all()}
-        ordered_availability = [availability.get(restaurant.id, False) for restaurant in restaurants]
+        availability = {item.restaurant_id: item.availability for item in
+                        product.menu_items.all()}
+        ordered_availability = [availability.get(restaurant.id, False) for
+                                restaurant in restaurants]
 
         products_with_restaurant_availability.append(
             (product, ordered_availability)
         )
 
-    return render(request, template_name="products_list.html", context={
-        'products_with_restaurant_availability': products_with_restaurant_availability,
-        'restaurants': restaurants,
-    })
+    return render(
+        request, template_name="products_list.html", context={
+            'products_with_restaurant_availability': products_with_restaurant_availability,
+            'restaurants': restaurants,
+        }
+        )
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_restaurants(request):
-    return render(request, template_name="restaurants_list.html", context={
-        'restaurants': Restaurant.objects.all(),
-    })
+    return render(
+        request, template_name="restaurants_list.html", context={
+            'restaurants': Restaurant.objects.all(),
+        }
+        )
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    rest_by_product = {}
-    all_restaurants_names = set()
-    for record in RestaurantMenuItem.objects.select_related().all():
-        if record.availability:
-            rest_by_product.setdefault(record.product.id, set()).add(
-                record.restaurant.name
-            )
-        all_restaurants_names.add(
-            (record.restaurant.name, record.restaurant.address)
-        )
+    restaurants = Restaurant.objects.prefetch_related('menu_items')
 
-    order_items = Order.orders.filter(
-        status__in=['NW', 'AP', 'PR', 'DL']
-    ).orders_with_total()
+    restaurants_with_availability = {}
+    for restaurant in restaurants:
+        restaurants_with_availability[restaurant] = [
+            item.product_id for item in restaurant.menu_items.all()
+            if item.availability]
 
-    order_positions = OrderPosition.objects.select_related('order').filter(
-        order__status__in=['NW', 'AP', 'PR', 'DL']
+    active_orders = Order.objects \
+        .filter(status__in=['10', '20', '30', '40']) \
+        .prefetch_related('products') \
+        .prefetch_related('restaurant') \
+        .order_by('status') \
+        .fetch_with_total()
+
+    for order in active_orders:
+        order.possible_restaurants = []
+        if not order.restaurant:
+            for restaurant in restaurants:
+                if all(
+                    [product.product_id in restaurants_with_availability[restaurant]
+                     for product in order.products.all()]
+                ):
+                    order.possible_restaurants.append(restaurant.name)
+
+    return render(
+        request, template_name='order_items.html', context={
+            'active_orders': active_orders,
+            'opts': Order._meta,
+        }
     )
-
-    possible_restaurants = {
-        order.pk: all_restaurants_names for order in order_items
-    }
-    for order_position in order_positions:
-        possible_restaurants[order_position.order.id] = \
-            possible_restaurants[order_position.order.id] & \
-            rest_by_product[order_position.product_id]
-
-    return render(request, template_name='order_items.html', context={
-        'order_items': order_items,
-        'opts': Order._meta,
-        'availability': possible_restaurants
-    })

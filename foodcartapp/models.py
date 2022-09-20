@@ -128,20 +128,20 @@ class RestaurantMenuItem(models.Model):
 
 
 class OrderQuerySet(models.QuerySet):
-    def orders_with_total(self):
+    def fetch_with_total(self):
         return self.annotate(
             total=Sum(F('products__quantity') * F('products__price'))
-        ).order_by('id')
+        )
 
 
 class Order(models.Model):
     class OrderStatus(models.TextChoices):
-        NEW = 'NW', _('Новый')
-        APPOINTED = 'AP', _('Распределен')
-        PREPARING = 'PR', _('Приготовление')
-        DELIVERY = 'DL', _('Доставка'),
-        COMPLETED = 'CP', _('Исполнен')
-        CANCELLED = 'CN', _('Отменен')
+        NEW = '10', _('Новый')
+        APPOINTED = '20', _('Распределен')
+        PREPARING = '30', _('Приготовление')
+        DELIVERY = '40', _('Доставка'),
+        COMPLETED = '50', _('Исполнен')
+        CANCELLED = '90', _('Отменен')
 
     class PaymentMethod(models.TextChoices):
         CASH = 'CS', _('Наличными при получении')
@@ -182,7 +182,7 @@ class Order(models.Model):
         blank=True,
     )
 
-    orders = OrderQuerySet.as_manager()
+    objects = OrderQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Заказ'

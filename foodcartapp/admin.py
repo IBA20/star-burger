@@ -137,8 +137,8 @@ class OrderAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         """If restaurant selected - change status to APPOINTED"""
-        if obj.restaurant and obj.status == 'NW':
-            obj.status = 'AP'
+        if obj.restaurant and obj.status == '10':
+            obj.status = '20'
         obj.save()
 
     def save_formset(self, request, form, formset, change):

@@ -68,7 +68,7 @@ def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     with transaction.atomic():
-        order = Order.orders.create(
+        order = Order.objects.create(
             firstname=serializer.validated_data['firstname'],
             lastname=serializer.validated_data['lastname'],
             phonenumber=serializer.validated_data['phonenumber'],
