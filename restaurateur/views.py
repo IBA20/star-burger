@@ -3,12 +3,11 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
-from foodcartapp.models import (Product, Restaurant, Order, RestaurantMenuItem)
-from .geofunctions import fetch_coordinates
+from foodcartapp.models import (Product, Restaurant, Order)
+from location.geofunctions import fetch_coordinates
 
 
 class Login(forms.Form):
@@ -122,6 +121,8 @@ def view_orders(request):
         .fetch_with_total()
 
     for order in active_orders:
+        location = fetch_coordinates(order.address)
+
         order.possible_restaurants = []
         if not order.restaurant:
             for restaurant in restaurants:
