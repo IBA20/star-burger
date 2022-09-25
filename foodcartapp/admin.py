@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib import admin
-from django.db.models import Count
+from django.db.models import Count, Subquery, Case, When, IntegerField
 from django.http import HttpResponseRedirect
 from django.shortcuts import reverse
 from django.templatetags.static import static
@@ -123,17 +123,48 @@ class OrderPositionInline(admin.TabularInline):
     extra = 0
 
 
+class OrderAdminForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        order_products = Product.objects.filter(
+            product_positions__order=self.instance).only('id')
+
+        # ВОПРОС: почему не работает в таком виде? (не группирует по 'restaurant')
+        # restaurant_ids = RestaurantMenuItem.objects.filter(
+        #     product__in=Subquery(order_products)
+        # ).values(
+        #     'restaurant', unavailable=Count(
+        #         Case(
+        #             When(availability=False, then=1),
+        #             When(availability__isnull=True, then=1),
+        #             output_field=IntegerField()
+        #         )
+        #     )
+        # ).filter(unavailable=0)
+
+        restaurant_ids = Restaurant.objects.filter(
+            menu_items__product__in=Subquery(order_products)
+        ).values(
+            'id', unavailable=Count(
+                Case(
+                    When(menu_items__availability=False, then=1),
+                    When(menu_items__availability__isnull=True, then=1),
+                    output_field=IntegerField()
+                )
+            )
+        ).filter(unavailable=0).values_list('id', flat=True)
+
+        self.fields['restaurant'].queryset = Restaurant.objects.filter(
+            id__in=Subquery(restaurant_ids)
+        )
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    form = OrderAdminForm
     inlines = [OrderPositionInline]
     list_display = ('firstname', 'lastname', 'phonenumber', 'address')
-    # my_id_for_formfield = None
-
-    def get_form(self, request, obj=None, **kwargs):
-        if obj:
-            self.my_id_for_formfield = obj.id
-        return super(OrderAdmin, self).get_form(request, obj, **kwargs)
-
 
     def save_model(self, request, obj, form, change):
         """If restaurant selected - change status to APPOINTED"""
@@ -159,13 +190,3 @@ class OrderAdmin(admin.ModelAdmin):
             ):
                 return HttpResponseRedirect(next_url)
         return default_response
-
-    # def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #     print(request)
-    #     if db_field.name == "restaurant":
-    #         kwargs["queryset"] = Restaurant.objects.prefetch_related('menu_items').filter(menu_items__product__product_positions__order=self.my_id_for_formfield).aggregate(fls=Count('menu_items__availability', menu_items__availability=False)).filter(fls=0)
-    #     return super(OrderAdmin, self).formfield_for_foreignkey(
-    #         db_field, request, **kwargs
-    #         )
-
-
