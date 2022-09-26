@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 from foodcartapp.models import (Product, Restaurant, Order)
-from location.geofunctions import fetch_coordinates
+from location.geofunctions import get_coordinates, get_distance
 
 
 class Login(forms.Form):
@@ -121,16 +121,26 @@ def view_orders(request):
         .fetch_with_total()
 
     for order in active_orders:
-        location = fetch_coordinates(order.address)
-
         order.possible_restaurants = []
         if not order.restaurant:
-            for restaurant in restaurants:
-                if all(
-                    [product.product_id in restaurants_with_availability[restaurant]
-                     for product in order.products.all()]
-                ):
-                    order.possible_restaurants.append(restaurant.name)
+            order_location = get_coordinates(order.address)
+            if not order_location:
+                order.error = 'Ошибка геолокации'
+            else:
+                for restaurant in restaurants:
+                    if all(
+                        [product.product_id in restaurants_with_availability[
+                            restaurant]
+                         for product in order.products.all()]
+                    ):
+                        restaurant_location = get_coordinates(restaurant.address)
+                        distance = round(get_distance(
+                            order_location, restaurant_location
+                            ), 2)
+                        order.possible_restaurants.append(
+                            (distance, restaurant.name)
+                            )
+                order.possible_restaurants.sort()
 
     return render(
         request, template_name='order_items.html', context={

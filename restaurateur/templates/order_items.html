@@ -1,6 +1,5 @@
 {% extends 'base_restaurateur_page.html' %}
 {% load admin_urls %}
-<!-- {% load restaurateur_extras %} -->
 
 {% block title %}Необработанные заказы | Star Burger{% endblock %}
 
@@ -40,12 +39,14 @@
           {%  if order.restaurant %}
             Исполнитель:<br>
             {{ order.restaurant }}
+          {% elif order.error %}
+            {{ order.error }}
           {% else %}
             <details>
               <summary>В наличии:</summary>
               <ul>
                 {% for restaurant in order.possible_restaurants %}
-                  <li>{{ restaurant }}</li>
+                  <li>{{ restaurant.1 }} - {{ restaurant.0 }}км</li>
                 {% endfor %}
               </ul>
             </details>

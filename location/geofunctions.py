@@ -1,6 +1,6 @@
 import requests
-from datetime import datetime
 from django.conf import settings
+from django.utils import timezone
 from geopy import distance
 
 from location.models import Location
@@ -31,10 +31,25 @@ def get_distance(location1: tuple, location2: tuple) -> float:
 def get_coordinates(address):
     try:
         location = Location.objects.get(address=address)
-        if (datetime.now() - location.updated_at).days < 3:
+        if (timezone.now() - location.updated_at).days < 3:
             return location.lat, location.lon
+        else:
+            try:
+                lat, lon = fetch_coordinates(address)
+                location.lat = lat
+                location.lon = lon
+                location.save()
+                return lat, lon
+            except Exception:
+                return location.lat, location.lon
     except Location.DoesNotExist:
         try:
+            lat, lon = fetch_coordinates(address)
+            Location.objects.create(
+                address=address,
+                lat=lat,
+                lon=lon,
+            )
             return fetch_coordinates(address)
         except Exception:
             return None
