@@ -6,8 +6,12 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
-from foodcartapp.models import (Product, Restaurant, Order)
-from location.geofunctions import get_coordinates, get_distance
+from foodcartapp.models import Product, Restaurant, Order
+from location.geofunctions import (
+    get_coordinates,
+    get_distance,
+    get_address_coordinates,
+)
 
 
 class Login(forms.Form):
@@ -120,27 +124,42 @@ def view_orders(request):
         .order_by('status') \
         .fetch_with_total()
 
+    new_orders_addresses = active_orders.filter(status='10')\
+        .values_list('address', flat=True)
+    restaurant_addresses = restaurants.values_list('address', flat=True)
+    address_coordinates = get_address_coordinates(
+        list(new_orders_addresses) + list(restaurant_addresses)
+    )
+
     for order in active_orders:
         order.possible_restaurants = []
-        if not order.restaurant:
+        if order.restaurant:
+            continue
+        order_location = address_coordinates.get(order.address)
+        if not order_location:
             order_location = get_coordinates(order.address)
-            if not order_location:
-                order.error = 'Ошибка геолокации'
-            else:
-                for restaurant in restaurants:
-                    if all(
-                        [product.product_id in restaurants_with_availability[
-                            restaurant]
-                         for product in order.products.all()]
-                    ):
-                        restaurant_location = get_coordinates(restaurant.address)
-                        distance = round(get_distance(
-                            order_location, restaurant_location
-                            ), 2)
-                        order.possible_restaurants.append(
-                            (distance, restaurant.name)
-                            )
-                order.possible_restaurants.sort()
+        if not order_location:
+            order.error = 'Ошибка геолокации'
+            continue
+        for restaurant in restaurants:
+            if all(
+                [product.product_id in restaurants_with_availability[
+                    restaurant]
+                 for product in order.products.all()]
+            ):
+                # По-хорошему, координаты ресторанов следовало бы хранить в базе
+                restaurant_location = address_coordinates.get(
+                    restaurant.address
+                )
+                if not restaurant_location:
+                    restaurant_location = get_coordinates(restaurant.address)
+                distance = round(get_distance(
+                    order_location, restaurant_location
+                    ), 2)
+                order.possible_restaurants.append(
+                    (distance, restaurant.name)
+                    )
+        order.possible_restaurants.sort()
 
     return render(
         request, template_name='order_items.html', context={
