@@ -92,7 +92,8 @@ def view_products(request):
 
     return render(
         request, template_name="products_list.html", context={
-            'products_with_restaurant_availability': products_with_restaurant_availability,
+            'products_with_restaurant_availability':
+                products_with_restaurant_availability,
             'restaurants': restaurants,
         }
         )

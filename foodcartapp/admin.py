@@ -130,7 +130,8 @@ class OrderAdminForm(forms.ModelForm):
         order_products = Product.objects.filter(
             product_positions__order=self.instance).only('id')
 
-        # ВОПРОС: почему не работает в таком виде? (не группирует по 'restaurant')
+        # ВОПРОС: почему не работает в таком виде?
+        # (не группирует по 'restaurant'):
         # restaurant_ids = RestaurantMenuItem.objects.filter(
         #     product__in=Subquery(order_products)
         # ).values(
