@@ -130,7 +130,7 @@ class RestaurantMenuItem(models.Model):
 class OrderQuerySet(models.QuerySet):
     def fetch_with_total(self):
         return self.annotate(
-            total=Sum(F('products__quantity') * F('products__price'))
+            total=Sum(F('positions__quantity') * F('positions__price'))
         )
 
 
@@ -162,7 +162,7 @@ class Order(models.Model):
         default=OrderStatus.NEW,
         db_index=True
     )
-    comments = models.TextField('Комментарии', max_length=256, blank=True)
+    comments = models.TextField('Комментарии', blank=True)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     called_at = models.DateTimeField(null=True, blank=True, db_index=True)
     delivered_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -173,7 +173,7 @@ class Order(models.Model):
         default=PaymentMethod.CASH,
         db_index=True
     )
-    restaurant = models.ForeignKey(
+    performer = models.ForeignKey(
         Restaurant,
         on_delete=models.SET_NULL,
         related_name='orders',
@@ -196,13 +196,13 @@ class OrderPosition(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name='products',
+        related_name='positions',
         verbose_name='заказ',
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name='product_positions',
+        related_name='positions',
         verbose_name='продукт',
     )
     quantity = models.IntegerField(

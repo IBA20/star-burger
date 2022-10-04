@@ -128,21 +128,7 @@ class OrderAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         order_products = Product.objects.filter(
-            product_positions__order=self.instance).only('id')
-
-        # ВОПРОС: почему не работает в таком виде?
-        # (не группирует по 'restaurant'):
-        # restaurant_ids = RestaurantMenuItem.objects.filter(
-        #     product__in=Subquery(order_products)
-        # ).values(
-        #     'restaurant', unavailable=Count(
-        #         Case(
-        #             When(availability=False, then=1),
-        #             When(availability__isnull=True, then=1),
-        #             output_field=IntegerField()
-        #         )
-        #     )
-        # ).filter(unavailable=0)
+            positions__order=self.instance).only('id')
 
         restaurant_ids = Restaurant.objects.filter(
             menu_items__product__in=Subquery(order_products)
@@ -156,7 +142,7 @@ class OrderAdminForm(forms.ModelForm):
             )
         ).filter(unavailable=0).values_list('id', flat=True)
 
-        self.fields['restaurant'].queryset = Restaurant.objects.filter(
+        self.fields['performer'].queryset = Restaurant.objects.filter(
             id__in=Subquery(restaurant_ids)
         )
 
@@ -169,7 +155,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         """If restaurant selected - change status to APPOINTED"""
-        if obj.restaurant and obj.status == '10':
+        if obj.performer and obj.status == '10':
             obj.status = '20'
         obj.save()
 

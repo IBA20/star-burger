@@ -20,7 +20,7 @@ def fetch_coordinates(address, apikey=settings.YANDEX_GEOCODER_APIKEY):
         'featureMember']
 
     if not found_places:
-        return None
+        return None, None
 
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")

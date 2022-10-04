@@ -120,8 +120,8 @@ def view_orders(request):
 
     active_orders = Order.objects \
         .filter(status__in=['10', '20', '30', '40']) \
-        .prefetch_related('products') \
-        .prefetch_related('restaurant') \
+        .prefetch_related('positions') \
+        .prefetch_related('performer') \
         .order_by('status') \
         .fetch_with_total()
 
@@ -134,19 +134,19 @@ def view_orders(request):
 
     for order in active_orders:
         order.possible_restaurants = []
-        if order.restaurant:
+        if order.performer:
             continue
         order_location = address_coordinates.get(order.address)
         if not order_location:
             order_location = get_coordinates(order.address)
-        if not order_location:
+        if not order_location or not order_location[0]:
             order.error = 'Ошибка геолокации'
             continue
         for restaurant in restaurants:
             if all(
                 [product.product_id in restaurants_with_availability[
                     restaurant]
-                 for product in order.products.all()]
+                 for product in order.positions.all()]
             ):
                 # По-хорошему, координаты ресторанов следовало бы хранить в базе
                 restaurant_location = address_coordinates.get(

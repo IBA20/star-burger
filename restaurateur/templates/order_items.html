@@ -36,9 +36,9 @@
         <td>{{ order.phonenumber }}</td>
         <td>{{ order.address }}</td>
         <td>
-          {%  if order.restaurant %}
+          {%  if order.performer %}
             Исполнитель:<br>
-            {{ order.restaurant }}
+            {{ order.performer }}
           {% elif order.error %}
             {{ order.error }}
           {% else %}
