@@ -1,9 +1,34 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Subquery, Count, Case, When, IntegerField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+
+
+class RestaurantQuerySet(models.QuerySet):
+    def get_available_for_order(self, order):
+        order_products = Product.objects.filter(
+            positions__order=order
+        ).only('id')
+
+        restaurant_ids = RestaurantMenuItem.objects.filter(
+            product__in=Subquery(order_products)
+        ).values(
+            'restaurant'
+        ).annotate(
+            unavailable=Count(
+                Case(
+                    When(availability=False, then=1),
+                    When(availability__isnull=True, then=1),
+                    output_field=IntegerField()
+                )
+            )
+        ).filter(unavailable=0).values_list('restaurant', flat=True)
+
+        return self.filter(
+            id__in=Subquery(restaurant_ids)
+        )
 
 
 class Restaurant(models.Model):
@@ -21,6 +46,8 @@ class Restaurant(models.Model):
         max_length=50,
         blank=True,
     )
+
+    objects = RestaurantQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'ресторан'
