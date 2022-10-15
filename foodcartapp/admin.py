@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib import admin
-from django.db.models import Count, Subquery, Case, When, IntegerField
+from django.db.models import Count, Subquery, Case, When, IntegerField, Prefetch
 from django.http import HttpResponseRedirect
 from django.shortcuts import reverse
 from django.templatetags.static import static
@@ -130,17 +130,17 @@ class OrderAdminForm(forms.ModelForm):
         order_products = Product.objects.filter(
             positions__order=self.instance).only('id')
 
-        restaurant_ids = Restaurant.objects.filter(
-            menu_items__product__in=Subquery(order_products)
+        restaurant_ids = RestaurantMenuItem.objects.filter(
+            product__in=Subquery(order_products)
         ).values(
-            'id', unavailable=Count(
+            'restaurant').annotate(unavailable=Count(
                 Case(
-                    When(menu_items__availability=False, then=1),
-                    When(menu_items__availability__isnull=True, then=1),
+                    When(availability=False, then=1),
+                    When(availability__isnull=True, then=1),
                     output_field=IntegerField()
                 )
             )
-        ).filter(unavailable=0).values_list('id', flat=True)
+        ).filter(unavailable=0).values_list('restaurant', flat=True)
 
         self.fields['performer'].queryset = Restaurant.objects.filter(
             id__in=Subquery(restaurant_ids)
