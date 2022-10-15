@@ -143,23 +143,23 @@ def view_orders(request):
             order.error = 'Ошибка геолокации'
             continue
         for restaurant in restaurants:
-            if all(
-                [product.product_id in restaurants_with_availability[
-                    restaurant]
+            can_perform = all(
+                [product.product_id in restaurants_with_availability[restaurant]
                  for product in order.positions.all()]
-            ):
-                # По-хорошему, координаты ресторанов следовало бы хранить в базе
-                restaurant_location = address_coordinates.get(
-                    restaurant.address
+            )
+            if not can_perform:
+                continue
+            restaurant_location = address_coordinates.get(
+                restaurant.address
+            )
+            if not restaurant_location:
+                restaurant_location = get_coordinates(restaurant.address)
+            distance = round(get_distance(
+                order_location, restaurant_location
+                ), 2)
+            order.possible_restaurants.append(
+                (distance, restaurant.name)
                 )
-                if not restaurant_location:
-                    restaurant_location = get_coordinates(restaurant.address)
-                distance = round(get_distance(
-                    order_location, restaurant_location
-                    ), 2)
-                order.possible_restaurants.append(
-                    (distance, restaurant.name)
-                    )
         order.possible_restaurants.sort()
 
     return render(

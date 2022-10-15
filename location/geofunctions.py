@@ -6,7 +6,9 @@ from geopy import distance
 from location.models import Location
 
 
-def fetch_coordinates(address, apikey=settings.YANDEX_GEOCODER_APIKEY):
+def fetch_coordinates(
+    address: str, apikey: str = settings.YANDEX_GEOCODER_APIKEY
+) -> tuple:
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(
         base_url, params={
@@ -39,11 +41,11 @@ def get_coordinates(address: str) -> [tuple, None]:
             defaults={'lat': lat, 'lon': lon}
         )
         return lat, lon
-    except Exception:
+    except requests.HTTPError:
         return None
 
 
-def get_address_coordinates(address_list):
+def get_address_coordinates(address_list: list) -> dict:
     address_coordinates = {}
     for location in Location.objects.filter(address__in=address_list):
         if (timezone.now() - location.updated_at).days < \
