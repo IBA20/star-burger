@@ -127,24 +127,6 @@ class OrderAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # order_products = Product.objects.filter(
-        #     positions__order=self.instance).only('id')
-        #
-        # restaurant_ids = RestaurantMenuItem.objects.filter(
-        #     product__in=Subquery(order_products)
-        # ).values(
-        #     'restaurant').annotate(unavailable=Count(
-        #         Case(
-        #             When(availability=False, then=1),
-        #             When(availability__isnull=True, then=1),
-        #             output_field=IntegerField()
-        #         )
-        #     )
-        # ).filter(unavailable=0).values_list('restaurant', flat=True)
-        #
-        # self.fields['performer'].queryset = Restaurant.objects.filter(
-        #     id__in=Subquery(restaurant_ids)
-        # )
         self.fields['performer'].queryset = Restaurant.objects\
             .get_available_for_order(self.instance)
 
