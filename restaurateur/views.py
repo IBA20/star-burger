@@ -101,6 +101,8 @@ def view_products(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_restaurants(request):
+    a = None
+    a.hello() # Creating an error with an invalid line of code
     return render(
         request, template_name="restaurants_list.html", context={
             'restaurants': Restaurant.objects.all(),
