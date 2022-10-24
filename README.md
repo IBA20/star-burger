@@ -53,12 +53,19 @@ python -m venv venv
 ```sh
 pip install -r requirements.txt
 ```
+При возникновении проблем с установкой psycopg2, предварительно запустите команду:
+```sh
+sudo apt install python3-dev libpq-dev
+```
+
+Установите PostgreSQL согласно документации и создайте базу.
 
 Определите переменные окружения. Создайте файл `.env` в каталоге `star_burger/` и положите туда такой код:
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
 YANDEX_GEOCODER_APIKEY=<your_geocoder_apikey>
 ROLLBAR_TOKEN=<your_rollbar_token>
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/NAME
 ```
 [Инструкция](https://dvmn.org/encyclopedia/api-docs/yandex-geocoder-api/) по получению Geocoder apikey.
 Система логирования ошибок [RollBar](https://rollbar.com/).
@@ -148,6 +155,8 @@ Parcel будет следить за файлами в каталоге `bundle
 ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 ```
 
+Установить PostgreSQL согласно документации и создать базу.
+
 Настроить бэкенд: создать файл `.env` в каталоге `star_burger/` со следующими настройками:
 
 - `DEBUG` — дебаг-режим. Поставьте `False`.
@@ -156,6 +165,7 @@ Parcel будет следить за файлами в каталоге `bundle
 - `YANDEX_GEOCODER_APIKEY` — [Инструкция по получению Geocoder apikey](https://dvmn.org/encyclopedia/api-docs/yandex-geocoder-api/)
 - `ROLLBAR_TOKEN` — ваш токен в системе логирования ошибок [RollBar](https://rollbar.com/).
 - `ROLLBAR_ENVIRONMENT` — название environment в системе [RollBar](https://rollbar.com/).
+- `DATABASE_URL`=postgres://USER:PASSWORD@HOST:PORT/NAME
 
 При необходимости измените значение переменной LOCATION_UPDATE_TIMEOUT в файле star_burger/settings.py - таймаут обновления кэша данных геолокации в днях.
 

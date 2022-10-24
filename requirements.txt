@@ -7,4 +7,5 @@ djangorestframework==3.13.1
 requests==2.28.1
 geopy==2.2.*
 rollbar==0.16.*
+psycopg2==2.9.4
 
