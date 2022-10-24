@@ -54,12 +54,14 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
+Определите переменные окружения. Создайте файл `.env` в каталоге `star_burger/` и положите туда такой код:
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
 YANDEX_GEOCODER_APIKEY=<your_geocoder_apikey>
+ROLLBAR_TOKEN=<your_rollbar_token>
 ```
 [Инструкция](https://dvmn.org/encyclopedia/api-docs/yandex-geocoder-api/) по получению Geocoder apikey.
+Система логирования ошибок [RollBar](https://rollbar.com/).
 
 При необходимости измените значение переменной LOCATION_UPDATE_TIMEOUT в файле star_burger/settings.py - таймаут обновления кэша данных геолокации в днях.
 
@@ -152,6 +154,8 @@ Parcel будет следить за файлами в каталоге `bundle
 - `SECRET_KEY` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
 - `ALLOWED_HOSTS`  [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
 - `YANDEX_GEOCODER_APIKEY` — [Инструкция по получению Geocoder apikey](https://dvmn.org/encyclopedia/api-docs/yandex-geocoder-api/)
+- `ROLLBAR_TOKEN` — ваш токен в системе логирования ошибок [RollBar](https://rollbar.com/).
+- `ROLLBAR_ENVIRONMENT` — название environment в системе [RollBar](https://rollbar.com/).
 
 При необходимости измените значение переменной LOCATION_UPDATE_TIMEOUT в файле star_burger/settings.py - таймаут обновления кэша данных геолокации в днях.
 

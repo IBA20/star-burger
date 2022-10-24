@@ -41,6 +41,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareExcluding404',
 ]
 
 ROOT_URLCONF = 'star_burger.urls'
@@ -115,7 +116,6 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 INTERNAL_IPS = [
     '127.0.0.1'
@@ -132,7 +132,11 @@ LOCATION_UPDATE_TIMEOUT = 3
 
 ROLLBAR = {
     'access_token': env('ROLLBAR_TOKEN'),
-    'environment': 'development' if DEBUG else 'production',
+    'environment': env('ROLLBAR_ENVIRONMENT', 'development'),
     'code_version': '1.0',
     'root': BASE_DIR,
 }
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rollbar.contrib.django_rest_framework.post_exception_handler'
+}
+
