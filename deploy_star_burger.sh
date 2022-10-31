@@ -2,8 +2,12 @@
 set  -e
 git pull
 ./venv/bin/pip install -r requirements.txt
+/bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
+/sbin/mkswap /var/swap.1
+/sbin/swapon /var/swap.1
 npm install
 ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
+/sbin/swapoff /var/swap.1
 ./venv/bin/python manage.py collectstatic --noinput
 ./venv/bin/python manage.py migrate --noinput
 systemctl restart star-burger
