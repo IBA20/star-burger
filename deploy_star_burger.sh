@@ -3,9 +3,9 @@ set  -e
 git pull
 ./venv/bin/pip install -r requirements.txt
 npm install
-nohup ./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./" &
+./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 ./venv/bin/python manage.py collectstatic --noinput
-./venv/bin/python manage.py migrate
+./venv/bin/python manage.py migrate --noinput
 systemctl restart star-burger
 curl \
     -H "X-Rollbar-Access-Token: 5373b8187af44c3199700e59c7212f3c" \

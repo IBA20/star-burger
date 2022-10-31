@@ -1,3 +1,4 @@
+staticfiles/
 .idea/
 bundles/**
 node_modules/
