@@ -35,7 +35,7 @@ services:
       - POSTGRES_URL=${POSTGRES_URL:-postgres://postgres:postgres@db:5432/postgres}
       - YANDEX_GEOCODER_APIKEY=${YANDEX_GEOCODER_APIKEY}
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ${PWD}/frontend/bundles:/frontend/bundles
       - ${PWD}/frontend/assets:/frontend/assets
