@@ -1,0 +1,7 @@
+venv/
+.env
+.dockerignore
+Dockerfile
+*/.gitkeep
+../docker-compose.yml
+/bundles

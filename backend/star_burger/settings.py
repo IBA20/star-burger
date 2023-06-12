@@ -1,7 +1,5 @@
 import os
 
-import dj_database_url
-
 from environs import Env
 
 
@@ -9,13 +7,12 @@ env = Env()
 env.read_env()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+SECRET_KEY = env('DJANGO_SECRET_KEY')
+DEBUG = env.bool('DJANGO_DEBUG', False)
 
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env.bool('DEBUG', True)
-
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
 
 INSTALLED_APPS = [
     'foodcartapp.apps.FoodcartappConfig',
@@ -40,7 +37,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareExcluding404',
 ]
 
 ROOT_URLCONF = 'star_burger.urls'
@@ -64,7 +60,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, "templates"),
+            os.path.join(BASE_DIR, "/backend/templates"),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -84,8 +80,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:////{0}'.format(os.path.join(BASE_DIR, 'db.sqlite3'))
+    'default': env.dj_db_url(
+        "POSTGRES_URL", "postgres://postgres:postgres@db:5432/postgres"
     )
 }
 
@@ -120,22 +116,5 @@ INTERNAL_IPS = [
     '127.0.0.1'
 ]
 
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "assets"),
-    os.path.join(BASE_DIR, "bundles"),
-]
-
 YANDEX_GEOCODER_APIKEY = env('YANDEX_GEOCODER_APIKEY')
 LOCATION_UPDATE_TIMEOUT = 3
-
-ROLLBAR = {
-    'access_token': env('ROLLBAR_TOKEN'),
-    'environment': env('ROLLBAR_ENVIRONMENT', 'development'),
-    'code_version': '1.0',
-    'root': BASE_DIR,
-}
-REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'rollbar.contrib.django_rest_framework.post_exception_handler'
-}
-

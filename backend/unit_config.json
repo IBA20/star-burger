@@ -1,0 +1,43 @@
+{
+    "listeners": {
+        "*:80": {
+            "pass": "routes/app"
+        }
+    },
+
+    "routes": {
+        "app": [
+            {
+                "match": {
+                    "uri": "/static/*"
+                },
+                "action": {
+                    "share": "/backend"
+                }
+            },
+            {
+                "match": {
+                    "uri": "/media/*"
+                },
+                "action": {
+                    "share": "/"
+                }
+            },
+            {
+                "action": {
+                    "pass": "applications/app"
+                }
+            }
+        ]
+    },
+    "applications":{
+       "app": {
+            "type":"python 3.9",
+            "path":"/backend/",
+            "module":"star_burger.wsgi",
+            "environment": {
+                "DJANGO_SETTINGS_MODULE": "star_burger.settings"
+            }
+        }
+    }
+}

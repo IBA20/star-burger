@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+  frontend:
+    build: frontend
+    container_name: 'frontend'
+#    image: frontend
+    volumes:
+      - ${PWD}/frontend/bundles:/frontend/bundles
+    command: ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
+
+  db:
+    image: postgres:12.0-alpine
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB-docker2}
+      POSTGRES_USER: ${POSTGRES_USER-docker2}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD-OwOtBep9Frut}
+
+  backend:
+    build: backend
+    container_name: 'backend'
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_started
+      frontend:
+        condition: service_completed_successfully
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=${DJANGO_DEBUG}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - POSTGRES_URL=${POSTGRES_URL:-postgres://postgres:postgres@db:5432/postgres}
+      - YANDEX_GEOCODER_APIKEY=${YANDEX_GEOCODER_APIKEY}
+    ports:
+      - "8080:80"
+    volumes:
+      - ${PWD}/frontend/bundles:/frontend/bundles
+      - ${PWD}/frontend/assets:/frontend/assets
+      - media:/backend/media
+
+volumes:
+  db_data:
+  media:

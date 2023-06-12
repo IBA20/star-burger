@@ -6,7 +6,7 @@ const FooterComponent = props => {
     color: "white",
     paddingTop: "50px",
     paddingBottom: "50px",
-    backgroundColor:"black",
+    // backgroundColor:"black",
     fontSize: "130%",
   }
 

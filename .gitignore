@@ -1,6 +1,6 @@
 staticfiles/
 .idea/
-bundles/**
+frontend/bundles/**
 node_modules/
 media/
 
