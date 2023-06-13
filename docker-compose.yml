@@ -4,10 +4,10 @@ services:
   frontend:
     build: frontend
     container_name: 'frontend'
-#    image: frontend
     volumes:
-      - ${PWD}/frontend/bundles:/frontend/bundles
-    command: ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
+      - ${PWD}/frontend/bundles:/temp/bundles
+    command: cp -r bundles/. /temp/bundles
+
 
   db:
     image: postgres:12.0-alpine
